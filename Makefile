@@ -1,10 +1,6 @@
-.PHONY: weibull.py bs.py
+python3 = /usr/bin/python3
 
-test: weibull.py bs.py
+.PHONY: all
 
-weibull.py:
-	./weibull.py
-
-bs.py:
-	./bs.py
-
+all:
+	for f in *.py;  do $(python3) $$f; done
