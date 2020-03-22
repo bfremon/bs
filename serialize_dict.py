@@ -45,6 +45,34 @@ def _simple_dict2buf(d, header_pound):
         ret += s + '\n'
         line_idx += 1
     return ret
+
+def stack_simple_dict2csv(d, fpath, header_pound = True):
+    '''write d dict to fpath csv file in pandas.DataFrame style.
+    d must be composed of only simple lists.
+    input: {'key1': [1,2], 'key2': [4, 5, 6] }
+    output: 
+    #key; val;
+    key1; 1;
+    key1; 2;
+    key2; 4;
+    ...
+    '''
+    write_buf = stack_simple_dict(d)
+    f_w = open(fpath, 'w')
+    f_w.write('%s' % write_buf)
+    f_w.close()
+    
+
+def stack_simple_dict(d, header_pound = True):
+    for k in d:
+        assert isinstance(d[k], list)
+    ret = '#key; val;\n'
+    if not header_pound:
+        ret = ''
+    for k in d:
+        for val in d[k]:
+            ret += str(k) + ';' + str(val) + '\n';
+    return ret
     
     
 def _has_right_len(lst, lst_len): 
@@ -112,7 +140,6 @@ if __name__ == '__main__':
             line_idx = 0
             for l in f_r.readlines():
                 if line_idx == 0:
-                    log(l)
                     self.assertTrue(l.split(';')[:-1] == ['a', 'b', 'c'])
                 else:
                     cumsum = 0
@@ -125,6 +152,31 @@ if __name__ == '__main__':
                 line_idx += 1
             f_r.close()
             os.unlink(fp)
+
+        def test_stack_simple_dict2csv(self):
+            fp = os.path.join(os.getcwd(), 'simple_stacked.csv')
+            stack_simple_dict2csv(self.one_d, fp, header_pound = False)
+            f_r = open(fp ,'r')
+            line_idx = 0
+            cumsum = {}
+            for k in self.one_d:
+                if not k in cumsum:
+                    cumsum[k] = 0
+                for val in self.one_d[k]:
+                    cumsum[k] += val
+            csv_cumsum = {}
+            for l in f_r.readlines():
+                if line_idx == 0:
+                    pass
+                else:
+                    k, v = l.split(';')[0], l.split(';')[1]
+                    if not k in csv_cumsum:
+                        csv_cumsum[k] = 0
+                    csv_cumsum[k] += int(v)
+                line_idx += 1
+            for k in cumsum:
+                    self.assertTrue(cumsum[k] == csv_cumsum[k])
+            f_r.close()
+            os.unlink(fp)
             
-        
     unittest.main()
