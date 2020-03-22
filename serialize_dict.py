@@ -1,31 +1,50 @@
 #!/usr/bin/env python3
 
-def simple_dict2csv(d, fpath):
+DEBUG = True
+
+def log(*msg):
+    if DEBUG:
+        import sys
+        s = ''
+        for t in msg:
+            s += str(t) +  ' '
+        sys.stdout.write('%s\n' % s)
+        
+            
+def simple_dict2csv(d, fpath, header_pound = True):
     '''write d dict to fpath csv file in pandas.DataFrame style.
-    d must be composed of only simple lists
+    d must be composed of only simple lists.
+    input: {'key1': [1,2,3], 'key2': [4, 5, 6] }
+    output: 
+    #key1; key2;
+    1;4; 
+    2;5:
+    3;6;
     '''
-    write_buf = simple_dict2buf(d)
+    write_buf = _simple_dict2buf(d, header_pound)
     f_w = open(fpath, 'w')
     f_w.write('%s' % write_buf)
     f_w.close()
 
     
-def simple_dict2buf(d):
+def _simple_dict2buf(d, header_pound):
     col_len = len(d[list(d.keys())[0]])
     for k in d:
         _has_right_len(d[k], col_len)
-    write_buf = ''
+    ret = '#'
+    if not header_pound:
+        ret = ''
     for k in d:
-        write_buf += str(k) + ';'
-    write_buf += '\n'
+        ret += str(k) + ';'
+    ret += '\n'
     line_idx = 0
     while line_idx < col_len:
         s = ''
         for k in d:
             s += str(d[k][line_idx]) + ';'
-        write_buf += s + '\n'
+        ret += s + '\n'
         line_idx += 1
-    return write_buf
+    return ret
     
     
 def _has_right_len(lst, lst_len): 
@@ -46,8 +65,9 @@ def nested_dict2csv(d, fpath, label=None):
     scd_keys = d[fst_id].keys()
     for k in d:
         for t in d[k]:
-            _has_right_len(d[k][t], col_len)
-        assert d[k].keys() == scd_keys
+#            _has_right_len(d[k][t], col_len)
+            assert d[k].keys() == scd_keys
+    write_buf = '#'
     if label == None:
         write_buf = ';'
     else:
@@ -87,11 +107,12 @@ if __name__ == '__main__':
         
         def test_simple_dict2csv(self):
             fp = os.path.join(os.getcwd(), 'simple.csv')
-            simple_dict2csv(self.one_d, fp)
+            simple_dict2csv(self.one_d, fp, header_pound = False)
             f_r = open(fp, 'r')
             line_idx = 0
             for l in f_r.readlines():
                 if line_idx == 0:
+                    log(l)
                     self.assertTrue(l.split(';')[:-1] == ['a', 'b', 'c'])
                 else:
                     cumsum = 0
@@ -104,5 +125,6 @@ if __name__ == '__main__':
                 line_idx += 1
             f_r.close()
             os.unlink(fp)
+            
         
     unittest.main()
