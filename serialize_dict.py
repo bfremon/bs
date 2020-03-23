@@ -11,32 +11,31 @@ def log(*msg):
         sys.stdout.write('%s\n' % s)
         
             
-def simple_dict2csv(d, fpath, header_pound = True):
+def simple_dict2csv(d, fpath, header = True):
     '''write d dict to fpath csv file in pandas.DataFrame style.
     d must be composed of only simple lists.
     input: {'key1': [1,2,3], 'key2': [4, 5, 6] }
-    output: 
-    #key1; key2;
+    output with header = True: 
+    key1; key2;
     1;4; 
     2;5:
     3;6;
     '''
-    write_buf = _simple_dict2buf(d, header_pound)
+    write_buf = _simple_dict2buf(d, header)
     f_w = open(fpath, 'w')
     f_w.write('%s' % write_buf)
     f_w.close()
 
     
-def _simple_dict2buf(d, header_pound):
+def _simple_dict2buf(d, header):
     col_len = len(d[list(d.keys())[0]])
     for k in d:
         _has_right_len(d[k], col_len)
-    ret = '#'
-    if not header_pound:
-        ret = ''
-    for k in d:
-        ret += str(k) + ';'
-    ret += '\n'
+    ret = ''
+    if header:
+        for k in d:
+            ret += str(k) + ';'
+        ret += '\n'
     line_idx = 0
     while line_idx < col_len:
         s = ''
@@ -46,28 +45,29 @@ def _simple_dict2buf(d, header_pound):
         line_idx += 1
     return ret
 
-def stack_simple_dict2csv(d, fpath, header_pound = True):
+
+def stack_simple_dict2csv(d, fpath, header = True):
     '''write d dict to fpath csv file in pandas.DataFrame style.
     d must be composed of only simple lists.
     input: {'key1': [1,2], 'key2': [4, 5, 6] }
-    output: 
-    #key; val;
+    output with header = True : 
+    key; val;
     key1; 1;
     key1; 2;
     key2; 4;
     ...
     '''
-    write_buf = stack_simple_dict(d)
+    write_buf = stack_simple_dict(d, header)
     f_w = open(fpath, 'w')
     f_w.write('%s' % write_buf)
     f_w.close()
     
 
-def stack_simple_dict(d, header_pound = True):
+def stack_simple_dict(d, header):
     for k in d:
         assert isinstance(d[k], list)
-    ret = '#key; val;\n'
-    if not header_pound:
+    ret = 'key; val;\n'
+    if not header:
         ret = ''
     for k in d:
         for val in d[k]:
@@ -132,10 +132,11 @@ if __name__ == '__main__':
                          '2': [10, 11, 12, 6, 5],
                          '3': [23, 223, 33, 323, 33] }
         }
+
         
         def test_simple_dict2csv(self):
             fp = os.path.join(os.getcwd(), 'simple.csv')
-            simple_dict2csv(self.one_d, fp, header_pound = False)
+            simple_dict2csv(self.one_d, fp, header = True)
             f_r = open(fp, 'r')
             line_idx = 0
             for l in f_r.readlines():
@@ -153,11 +154,11 @@ if __name__ == '__main__':
             f_r.close()
             os.unlink(fp)
 
+            
         def test_stack_simple_dict2csv(self):
             fp = os.path.join(os.getcwd(), 'simple_stacked.csv')
-            stack_simple_dict2csv(self.one_d, fp, header_pound = False)
+            stack_simple_dict2csv(self.one_d, fp, header = False)
             f_r = open(fp ,'r')
-            line_idx = 0
             cumsum = {}
             for k in self.one_d:
                 if not k in cumsum:
@@ -166,16 +167,12 @@ if __name__ == '__main__':
                     cumsum[k] += val
             csv_cumsum = {}
             for l in f_r.readlines():
-                if line_idx == 0:
-                    pass
-                else:
-                    k, v = l.split(';')[0], l.split(';')[1]
-                    if not k in csv_cumsum:
-                        csv_cumsum[k] = 0
-                    csv_cumsum[k] += int(v)
-                line_idx += 1
+                k, v = l.split(';')[0], l.split(';')[1]
+                if not k in csv_cumsum:
+                    csv_cumsum[k] = 0
+                csv_cumsum[k] += int(v)
             for k in cumsum:
-                    self.assertTrue(cumsum[k] == csv_cumsum[k])
+                self.assertTrue(cumsum[k] == csv_cumsum[k])
             f_r.close()
             os.unlink(fp)
             
