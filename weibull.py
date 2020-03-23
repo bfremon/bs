@@ -5,7 +5,7 @@ import statsmodels.api as sm
 import pandas as pd
 import sys
 import bs
-import serialize_dict
+import dict2csv
 
 DEBUG = True
 
@@ -115,9 +115,9 @@ def bench_ci(v, iters):
         calc_t['it'].append(it)
         calc_t['calc_t'].append(end_t)
         sys.stdout.write(' %3.1f s\n' % end_t) 
-    serialize_dict.simple_dict2csv(calc_t, os.path.join(dest_dir, 'calc.csv'))
-    serialize_dict.nested_dict2csv(prms, os.path.join(dest_dir, 'params.csv'))
-    serialize_dict.stack_simple_dict2csv(smpls, os.path.join(dest_dir, 'samples.csv'))
+    dict2csv.simple_dict2csv(calc_t, os.path.join(dest_dir, 'calc.csv'))
+    dict2csv.nested_dict2csv(prms, os.path.join(dest_dir, 'params.csv'))
+    dict2csv.stack_simple_dict2csv(smpls, os.path.join(dest_dir, 'samples.csv'))
 
 
 if __name__ == '__main__':
