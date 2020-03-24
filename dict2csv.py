@@ -8,7 +8,7 @@ def log(*msg):
         s = ''
         for t in msg:
             s += str(t) +  ' '
-        sys.stdout.write('%s\n' % s)
+        sys.stdout.write('LOG: %s\n' % s)
         
             
 def simple_dict2csv(d, fpath, header = True):
@@ -35,13 +35,14 @@ def _simple_dict2buf(d, header):
     if header:
         for k in d:
             ret += str(k) + ';'
-        ret += '\n'
+        ret = ret[:-1] + '\n'
     line_idx = 0
     while line_idx < col_len:
         s = ''
         for k in d:
             s += str(d[k][line_idx]) + ';'
-        ret += s + '\n'
+        ret += s
+        ret = ret[:-1] + '\n'
         line_idx += 1
     return ret
 
@@ -66,7 +67,7 @@ def stack_simple_dict2csv(d, fpath, header = True):
 def stack_simple_dict(d, header):
     for k in d:
         assert isinstance(d[k], list)
-    ret = 'key; val;\n'
+    ret = 'key;val\n'
     if not header:
         ret = ''
     for k in d:
@@ -102,7 +103,7 @@ def nested_dict2csv(d, fpath, label=None):
         write_buf += str(label) + ';'
     for k in d[fst_id]:
         write_buf += str(k) + ';'
-    write_buf += '\n'
+    write_buf = write_buf[:-1] + '\n'
     line_idx = 0
     while line_idx < col_len:
         for k in d:
@@ -110,7 +111,8 @@ def nested_dict2csv(d, fpath, label=None):
             s += str(k) + ';' 
             for t in d[k]:
                 s += str(d[k][t][line_idx]) + ';'
-            write_buf += s + '\n'
+            write_buf += s 
+            write_buf = write_buf[:-1] + '\n'
         line_idx += 1
     f_w = open(fpath, 'w')
     f_w.write('%s' % write_buf)
@@ -141,13 +143,15 @@ if __name__ == '__main__':
             line_idx = 0
             for l in f_r.readlines():
                 if line_idx == 0:
-                    self.assertTrue(l.split(';')[:-1] == ['a', 'b', 'c'])
+                    keys_lst = l.replace('\n', '')
+                    keys_lst = keys_lst.split(';')
+                    self.assertTrue(keys_lst == ['a', 'b', 'c'])
                 else:
                     cumsum = 0
                     for k in self.one_d:
                         cumsum += self.one_d[k][line_idx - 1]
                     csv_cumsum = 0
-                    for t in l.split(';')[:-1]:
+                    for t in l.split(';'):
                         csv_cumsum += int(t)
                     self.assertTrue(cumsum == csv_cumsum)
                 line_idx += 1
