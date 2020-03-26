@@ -4,8 +4,9 @@ import numpy as np
 import statsmodels.api as sm
 import pandas as pd
 import sys
+import os
 import bs
-import dict2csv
+import struct2csv
 
 DEBUG = True
 
@@ -115,9 +116,9 @@ def bench_ci(v, iters):
         calc_t['it'].append(it)
         calc_t['calc_t'].append(end_t)
         sys.stdout.write(' %3.1f s\n' % end_t) 
-    dict2csv.simple_dict2csv(calc_t, os.path.join(dest_dir, 'calc.csv'))
-    dict2csv.nested_dict2csv(prms, os.path.join(dest_dir, 'params.csv'))
-    dict2csv.stack_simple_dict2csv(smpls, os.path.join(dest_dir, 'samples.csv'))
+    struct2csv.simple_dict2csv(calc_t, os.path.join(dest_dir, 'calc.csv'))
+    struct2csv.nested_dict2csv(prms, os.path.join(dest_dir, 'params.csv'))
+    struct2csv.stack_simple_dict2csv(smpls, os.path.join(dest_dir, 'samples.csv'))
 
 
 if __name__ == '__main__':
@@ -127,7 +128,8 @@ if __name__ == '__main__':
              2899, 2959, 3017, 3044, 3051, 3146, 3220, 3299 ] 
 
     if len(sys.argv) == 2 and sys.argv[1] == '-b':
-        bench_ci(data, [10**i for i in range(3, 6)])
+        bench_ci(data, [ 10 ** i for i in range(3, 6)])
+        struct2csv.lst2csv(data, os.path.join(os.getcwd(), 'bench', 'test_data.csv'))
     else:
         import unittest
         import os
