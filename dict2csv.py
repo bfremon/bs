@@ -120,7 +120,7 @@ def nested_dict2csv(d, fpath, label=None):
 
     
 def lst2csv(lst, fpath):
-    f_w = open(os.path.join(fpath), 'w')
+    f_w = open(fpath, 'w')
     s = ''
     for t in lst:
         s += str(t) + '\n'
