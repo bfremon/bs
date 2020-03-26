@@ -117,7 +117,16 @@ def nested_dict2csv(d, fpath, label=None):
     f_w = open(fpath, 'w')
     f_w.write('%s' % write_buf)
     f_w.close()
+
     
+def lst2csv(lst, fpath):
+    f_w = open(os.path.join(fpath), 'w')
+    s = ''
+    for t in lst:
+        s += str(t) + '\n'
+    f_w.write('%s' % s)
+    f_w.close()
+
 
 if __name__ == '__main__':
     import unittest
@@ -134,7 +143,7 @@ if __name__ == '__main__':
                          '2': [10, 11, 12, 6, 5],
                          '3': [23, 223, 33, 323, 33] }
         }
-
+        lst = [1, 2, 3, 4, 5]
         
         def test_simple_dict2csv(self):
             fp = os.path.join(os.getcwd(), 'simple.csv')
@@ -179,5 +188,21 @@ if __name__ == '__main__':
                 self.assertTrue(cumsum[k] == csv_cumsum[k])
             f_r.close()
             os.unlink(fp)
-            
+
+
+        def test_lst2csv(self):
+            fp = os.path.join(os.getcwd(), 'lst.csv')
+            lst2csv(self.lst, fp)
+            cumsum = 0
+            for i in self.lst:
+                cumsum += i
+            f_r = open(fp, 'r')
+            csv_cumsum = 0
+            for l in f_r.readlines():
+                csv_cumsum += int(l.replace('\n', ''))
+            self.assertTrue(csv_cumsum == cumsum)
+            f_r.close()
+            os.unlink(fp)
+
+        
     unittest.main()
