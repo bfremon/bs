@@ -86,7 +86,7 @@ def _has_right_len(lst, lst_len):
 def nested_dict2csv(d, fpath, label=None):
     '''write d dict to fpath csv file in pandas.DataFrame style.
     d must be composed of nested dict with the same number of keys,
-    pointing to list of same len()
+    pointing to lists of same len()
     '''
     fst_id = list(d.keys())[0]
     scd_id = list(d[fst_id].keys())[0]
@@ -145,6 +145,7 @@ if __name__ == '__main__':
         }
         lst = [1, 2, 3, 4, 5]
         
+
         def test_simple_dict2csv(self):
             fp = os.path.join(os.getcwd(), 'simple.csv')
             simple_dict2csv(self.one_d, fp, header = True)
@@ -204,5 +205,34 @@ if __name__ == '__main__':
             f_r.close()
             os.unlink(fp)
 
-        
+
+        def test_nested_dict2csv(self):
+            fp = os.path.join(os.getcwd(), 'nested.csv')
+            nested_dict2csv(self.two_d, fp)
+            f_r = open(fp, 'r')
+            cumsum = {}
+            for i in self.two_d:
+                for j in self.two_d[i]:
+                    if not j in cumsum:
+                        cumsum[j] = 0
+                    for k in range(0, len(self.two_d[i][j])):
+                        cumsum[j] += int(self.two_d[i][j][k])
+            csv_cumsum = {}
+            csv_cumsum[1], csv_cumsum[2], csv_cumsum[3] = 0, 0, 0
+            line_idx = 0
+            for l in f_r.readlines():
+                if line_idx == 0:
+                    pass
+                else:
+                    s = l.split(';')[1:]
+                    csv_cumsum[1] += int(s[0])
+                    csv_cumsum[2] += int(s[1])
+                    csv_cumsum[3] += int(s[2])
+                line_idx += 1
+            for t in csv_cumsum:
+                self.assertTrue(csv_cumsum[t] == cumsum[str(t)])
+            f_r.close()
+            os.unlink(fp)
+
+            
     unittest.main()
