@@ -119,6 +119,27 @@ def nested_dict2csv(d, fpath, label=None):
     f_w.close()
 
     
+def melt_nested_dict2csv(d, fpath):
+    '''
+    Transform d (nested dict with two levels in long format.
+    List at 3rd level can be of arbitrary lenght
+    d = {'a': { 1 : [], 2: [], ...}, 'b': {'a': [], 'b': []}
+    transformed to :
+    a; 1; a[1][0],
+    a; 1; a[1][1],
+    ...
+    '''
+    s = ''
+    for k_1 in d:
+        for k_2 in d[k_1]:
+            for i in range(0, len(d[k_1][k_2])):
+                s += str(k_1) + ';' + str(k_2) + ';' \
+                           + str(d[k_1][k_2][i]) + '\n'
+    f_w = open(fpath, 'w')
+    f_w.write('%s' % s)
+    f_w.close()
+
+                           
 def lst2csv(lst, fpath):
     f_w = open(fpath, 'w')
     s = ''
@@ -126,7 +147,6 @@ def lst2csv(lst, fpath):
         s += str(t) + '\n'
     f_w.write('%s' % s)
     f_w.close()
-
 
 if __name__ == '__main__':
     import unittest
@@ -143,9 +163,20 @@ if __name__ == '__main__':
                          '2': [10, 11, 12, 6, 5],
                          '3': [23, 223, 33, 323, 33] }
         }
+        three_d = { 'a': { '1': [1, 2, 3, 4, 5],
+                         '2': [4, 5, 6, 5, 7],
+                         '3': [2, 4, 5, 5, 6] },
+                    'b': { '1': [7, 8, 9, 5, 8],
+                           '2': [10, 11, 12, 6, 5, 5, 44],
+                           '3': [23, 223, 33, 323, 33] },
+                    'c': { '1': [7, 8, 9, 5, 8],
+                           'd': [10, 11, 12, 6, 5, 5, 44],
+                           '3': [23, 223, 33, 323, 33], 
+                           '4': [2, 4, 5, 5, 6] }
+                    }
+
         lst = [1, 2, 3, 4, 5]
         
-
         def test_simple_dict2csv(self):
             fp = os.path.join(os.getcwd(), 'simple.csv')
             simple_dict2csv(self.one_d, fp, header = True)
@@ -234,5 +265,34 @@ if __name__ == '__main__':
             f_r.close()
             os.unlink(fp)
 
-            
+
+        def test_melt_nested_dict2csv(self):
+            fp = os.path.join(os.getcwd(), 'melt_nested.csv')
+            melt_nested_dict2csv(self.three_d, fp)
+            cumsum = {}
+            for k_1 in self.three_d:
+                if not k_1 in cumsum:
+                    cumsum[k_1] = {}
+                for k_2 in self.three_d[k_1]:
+                    if not k_2 in cumsum:
+                        cumsum[k_1][k_2] = 0
+                    for i in range(0, len(self.three_d[k_1][k_2])):
+                        cumsum[k_1][k_2] += int(self.three_d[k_1][k_2][i])
+            csv_cumsum = {}
+            f_r = open(fp, 'r')
+            for l in f_r.readlines():
+                s = l.split(';')
+                k_1 = s[0]
+                k_2 = s[1]
+                val = s[2]
+                if not k_1 in csv_cumsum:
+                    csv_cumsum[k_1] = {}
+                if not k_2 in csv_cumsum[k_1]:
+                    csv_cumsum[k_1][k_2] = 0
+                csv_cumsum[k_1][k_2] += int(val)
+            self.assertTrue(cumsum == csv_cumsum)
+            f_r.close()
+            os.unlink(fp)
+
+        
     unittest.main()
