@@ -1,6 +1,10 @@
 python3 = /usr/bin/python3
+rm = /bin/rm -fr
 
-.PHONY: all
+.PHONY: all clean
 
 all:
 	for f in *.py;  do echo '\nTesting '$$f; $(python3) $$f; done
+
+clean:
+	$(rm) -fr bench/
