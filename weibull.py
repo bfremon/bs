@@ -133,22 +133,26 @@ def batch_fit_wb_cdf(input_data, out_f_p, iter_nb=10000):
     return ret
 
 
-def stats_fit_wb_cdf(df):
+def stats_fit_wb_cdf(df, alpha=0.05):
     """
-    Return a dataframe with median and 95 % CI for weibull cdf fits 
+    Return a dataframe with median and 1 - alpha % CI for weibull cdf fits 
     in df (output of batch_fit_wb_cdf) 
     """
+    if not 0 < alpha < 1:
+        raise SyntaxError('alpha must be strictly between 0 and 1')
     r = {}
     for cat in df['cat'].unique():
         cat_dat = df[df['cat'] == cat]
         a_dat = cat_dat[cat_dat['param'] == 1]
         f0_dat = cat_dat[cat_dat['param'] == 0]
         a_median = a_dat['val'].quantile(0.5)
-        a_lb = a_dat['val'].quantile(0.025)
-        a_ub = a_dat['val'].quantile(0.975)
+        lb = alpha / 2
+        ub = 1 - lb
+        a_lb = a_dat['val'].quantile(lb)
+        a_ub = a_dat['val'].quantile(ub)
         f0_median = f0_dat['val'].quantile(0.5)
-        f0_lb = f0_dat['val'].quantile(0.025)
-        f0_ub = f0_dat['val'].quantile(0.975)
+        f0_lb = f0_dat['val'].quantile(lb)
+        f0_ub = f0_dat['val'].quantile(ub)
         r[cat] = [a_lb, a_median, a_ub, f0_lb, f0_median, f0_ub]
     index = ['a 2.5%', 'a 50%', 'a 97.5%', 'f0 2.5%', 'f0 50%', 'f0 97.5%']
     ret = pd.DataFrame(r, index=index)
@@ -202,5 +206,9 @@ if __name__ == '__main__':
 #                print(sts)
                 os.unlink(out_f_p)
 
+            def test_stats_fit_wb_cdf(self):
+                df = pd.DataFrame(self.batch_d)
+                self.assertRaises(SyntaxError, stats_fit_wb_cdf, df, 2)
+        
 
         unittest.main()
