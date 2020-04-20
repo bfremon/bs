@@ -41,6 +41,7 @@ def fit_weibull_cdf(v):
     x0 = np.exp(-beta / alpha)
     return x0, alpha
 
+
 def pre_process(filepath):
     """
     process a CSV file with:
@@ -72,15 +73,6 @@ def pre_process(filepath):
             ret[cat].append(data)
     f_r.close()
     return pd.DataFrame(ret)
-
-
-def get_ci(v, alpha = 0.05):
-    assert 0 <= alpha <= 1
-    ''' return 1 - alpha / 2 confidence intervales for v'''
-    lower_bound = alpha / 2
-    upper_bound = 1 - lower_bound
-    ser = pandas.Series(v)
-    return (ser.quantile(lower_bound), ser.quantile(upper_bound))
 
 
 def bench_ci(v, iters):
@@ -140,7 +132,30 @@ def batch_fit_wb_cdf(input_data, out_f_p, iter_nb=10000):
     ret.columns = ['cat', 'param', 'val']
     return ret
 
-        
+
+def stats_fit_wb_cdf(df):
+    """
+    Return a dataframe with median and 95 % CI for weibull cdf fits 
+    in df (output of batch_fit_wb_cdf) 
+    """
+    r = {}
+    for cat in df['cat'].unique():
+        cat_dat = df[df['cat'] == cat]
+        a_dat = cat_dat[cat_dat['param'] == 1]
+        f0_dat = cat_dat[cat_dat['param'] == 0]
+        a_median = a_dat['val'].quantile(0.5)
+        a_lb = a_dat['val'].quantile(0.025)
+        a_ub = a_dat['val'].quantile(0.975)
+        f0_median = f0_dat['val'].quantile(0.5)
+        f0_lb = f0_dat['val'].quantile(0.025)
+        f0_ub = f0_dat['val'].quantile(0.975)
+        r[cat] = [a_lb, a_median, a_ub, f0_lb, f0_median, f0_ub]
+    log(r)
+    index = ['a 2.5%', 'a 50%', 'a 97.5%', 'f0 2.5%', 'f0 50%', 'f0 97.5%']
+    ret = pd.DataFrame(r, index=index)
+    return ret
+
+
 if __name__ == '__main__':
     data = [ 1480, 1558, 1661, 1705, 1753, 1824, 1833,
              1901, 2125, 2189, 2226, 2261, 2377, 2433,
@@ -156,6 +171,8 @@ if __name__ == '__main__':
         
         class test_weibull(unittest.TestCase):
             data = data
+            batch_d = {'a': data, 'b': data, 'c': data}
+            
             def test_fit_weibull_cdf(self):
                 x0, a = fit_weibull_cdf(self.data)
                 self.assertAlmostEqual(x0, 2613, delta = 10)
@@ -177,12 +194,14 @@ if __name__ == '__main__':
                 os.unlink(fpath)
 
             def test_batch_weibull(self):
-                d = {'a': self.data, 'b': self.data, 'c': self.data}
-                df = pd.DataFrame(d).melt()
+                df = pd.DataFrame(self.batch_d).melt()
                 df.columns = ['cat', 'val']
                 out_f_p = os.path.join(os.getcwd(), 'batch-test.csv')
                 res = batch_fit_wb_cdf(df, out_f_p, 1000)
                 self.assertTrue(len(res) == 6000)
+                sts = stats_fit_wb_cdf(res)
+#                print(sts)
                 os.unlink(out_f_p)
-                
+
+
         unittest.main()
