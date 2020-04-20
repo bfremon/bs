@@ -184,7 +184,7 @@ def _bxplt(x, y, dat, out_f, title=None, ytitle=None):
         bxp.set_xticklabels(bxp.get_xticklabels(), rotation=30)
     if ytitle != None:
         raise ErrorNotImplemented
-    bxp.get_figure().savefig(out_f)
+    bxp.get_figure().savefig(out_f, dpi=300)
     plt.clf()
 
 
