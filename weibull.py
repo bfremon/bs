@@ -18,7 +18,7 @@ def log(*msg):
         sys.stdout.write('%s\n' % s)
 
 
-def fit_weibull_cdf(v):
+def fit_wb_cdf(v):
     """
     fit data from v array with weibull CDF given by:
     p(x) = 1 - exp((-x / x0)^(-a))
@@ -124,7 +124,7 @@ def batch_fit_wb_cdf(input_data, out_f_p, iter_nb=10000):
         log('Processing category %s' % str(cat))
         dat = input_data[input_data['cat'] == cat]
         v = dat['val'].tolist()
-        out = bs.bootstrap(v, fit_weibull_cdf, resample_n = len(v), iter_n = iter_nb)
+        out = bs.bootstrap(v, fit_wb_cdf, resample_n = len(v), iter_n = iter_nb)
         params, samples = bs.split_bs_out(out)
         r[cat] = params
     struct2csv.melt_nested_dict2csv(r, out_f_p)
@@ -150,7 +150,6 @@ def stats_fit_wb_cdf(df):
         f0_lb = f0_dat['val'].quantile(0.025)
         f0_ub = f0_dat['val'].quantile(0.975)
         r[cat] = [a_lb, a_median, a_ub, f0_lb, f0_median, f0_ub]
-    log(r)
     index = ['a 2.5%', 'a 50%', 'a 97.5%', 'f0 2.5%', 'f0 50%', 'f0 97.5%']
     ret = pd.DataFrame(r, index=index)
     return ret
@@ -173,8 +172,8 @@ if __name__ == '__main__':
             data = data
             batch_d = {'a': data, 'b': data, 'c': data}
             
-            def test_fit_weibull_cdf(self):
-                x0, a = fit_weibull_cdf(self.data)
+            def test_fit_wb_cdf(self):
+                x0, a = fit_wb_cdf(self.data)
                 self.assertAlmostEqual(x0, 2613, delta = 10)
                 self.assertAlmostEqual(a, 5, delta = 0.5)
             
@@ -193,12 +192,12 @@ if __name__ == '__main__':
                     assert len(ret[k]) == len(self.data)
                 os.unlink(fpath)
 
-            def test_batch_weibull(self):
+            def test_batch_wb(self):
                 df = pd.DataFrame(self.batch_d).melt()
                 df.columns = ['cat', 'val']
                 out_f_p = os.path.join(os.getcwd(), 'batch-test.csv')
-                res = batch_fit_wb_cdf(df, out_f_p, 1000)
-                self.assertTrue(len(res) == 6000)
+                res = batch_fit_wb_cdf(df, out_f_p, 100)
+                self.assertTrue(len(res) == 600)
                 sts = stats_fit_wb_cdf(res)
 #                print(sts)
                 os.unlink(out_f_p)
