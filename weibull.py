@@ -20,11 +20,11 @@ def log(*msg):
         sys.stdout.write('%s\n' % s)
 
 
-def fit_wb_cdf(v):
+def fit_wb_cdf(v, places=0):
     """
     fit data from v array with weibull CDF given by:
     p(x) = 1 - exp((-x / x0)^(-a))
-    return x0, a
+    return x0, a (rounded to places decimals)
     """
     vec = np.array(sorted(v)).astype('float')
     cdf = sm.distributions.empirical_distribution.ECDF(vec)
@@ -42,7 +42,8 @@ def fit_wb_cdf(v):
     beta, alpha = model.params
     x0 = np.exp(-beta / alpha)
     # TODO: param to control number of decimals places
-    return x0, alpha
+    # BUG: 3 decimal places returned
+    return round(x0, places), round(alpha, places)
 
 
 def pre_process(filepath):
