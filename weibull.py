@@ -154,9 +154,11 @@ def stats_fit_wb_cdf(df, alpha=0.05):
         f0_lb = f0_dat['val'].quantile(lb)
         f0_ub = f0_dat['val'].quantile(ub)
         r[cat] = [a_lb, a_median, a_ub, f0_lb, f0_median, f0_ub]
-    index = ['a 2.5%', 'a 50%', 'a 97.5%', 'f0 2.5%', 'f0 50%', 'f0 97.5%']
+    index = ['a lower bound', 'a median', 'a upper bound',
+             x'f0 lower bound', 'f0 median', 'f0 upper bound']
     ret = pd.DataFrame(r, index=index)
     return ret
+
 
 
 if __name__ == '__main__':
