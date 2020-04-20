@@ -278,8 +278,13 @@ if __name__ == '__main__':
                         cumsum[k_1][k_2] = 0
                     for i in range(0, len(self.three_d[k_1][k_2])):
                         cumsum[k_1][k_2] += int(self.three_d[k_1][k_2][i])
+            cum_len = 0
+            for k in self.three_d:
+                for j in self.three_d[k]:
+                    cum_len += len(self.three_d[k][j])
             csv_cumsum = {}
             f_r = open(fp, 'r')
+            line_cnt = 0
             for l in f_r.readlines():
                 s = l.split(';')
                 k_1 = s[0]
@@ -290,7 +295,9 @@ if __name__ == '__main__':
                 if not k_2 in csv_cumsum[k_1]:
                     csv_cumsum[k_1][k_2] = 0
                 csv_cumsum[k_1][k_2] += int(val)
+                line_cnt += 1
             self.assertTrue(cumsum == csv_cumsum)
+            self.assertTrue(cum_len == line_cnt)
             f_r.close()
             os.unlink(fp)
 
