@@ -19,11 +19,11 @@ def log(*msg):
 
 
 def fit_weibull_cdf(v):
-    '''
+    """
     fit data from v array with weibull CDF given by:
     p(x) = 1 - exp((-x / x0)^(-a))
     return x0, a
-    '''
+    """
     vec = np.array(sorted(v)).astype('float')
     cdf = sm.distributions.empirical_distribution.ECDF(vec)
     # min (= 0) and max(= 1.0) quantile removed to allow log transform
@@ -41,14 +41,13 @@ def fit_weibull_cdf(v):
     x0 = np.exp(-beta / alpha)
     return x0, alpha
 
-
 def pre_process(filepath):
-    '''
+    """
     process a CSV file with:
     column 0: categorical data
     column 1: variable data
     return a Pandas.DataFrame
-    '''
+    """
     ret = {}
     f_r = open(filepath, 'r')
     first_line = True
@@ -85,9 +84,10 @@ def get_ci(v, alpha = 0.05):
 
 
 def bench_ci(v, iters):
-    '''benchmark fit_weibull_cdf() by trying iterations numbers in iter_list.
+    """
+    Benchmark fit_weibull_cdf() by trying iterations numbers in iter_list.
     return stats about parameters and execution time.
-    '''
+    """
     import time
     import os
 
@@ -117,10 +117,30 @@ def bench_ci(v, iters):
         calc_t['calc_t'].append(end_t)
         sys.stdout.write(' %3.1f s\n' % end_t) 
     struct2csv.simple_dict2csv(calc_t, os.path.join(dest_dir, 'calc.csv'))
-    struct2csv.nested_dict2csv(prms, os.path.join(dest_dir, 'params.csv'))
+    struct2csv.melt_nested_dict2csv(prms, os.path.join(dest_dir, 'params.csv'))
     struct2csv.stack_simple_dict2csv(smpls, os.path.join(dest_dir, 'samples.csv'))
 
+    
+def batch_fit_wb_cdf(input_data, out_f_p, iter_nb=10000):
+    """
+    Fit a weibull cdf on each category of input_data for iter_nb iterations.
+    Return a melted dataframe with all data, logged in out_f_p (csv file).
+    """
+    r = {}
+    out_f_p = os.path.join(out_f_p)
+    for cat in input_data['cat'].unique():
+        log('Processing category %s' % str(cat))
+        dat = input_data[input_data['cat'] == cat]
+        v = dat['val'].tolist()
+        out = bs.bootstrap(v, fit_weibull_cdf, resample_n = len(v), iter_n = iter_nb)
+        params, samples = bs.split_bs_out(out)
+        r[cat] = params
+    struct2csv.melt_nested_dict2csv(r, out_f_p)
+    ret = pd.read_csv(out_f_p, header=None, sep=';')
+    ret.columns = ['cat', 'param', 'val']
+    return ret
 
+        
 if __name__ == '__main__':
     data = [ 1480, 1558, 1661, 1705, 1753, 1824, 1833,
              1901, 2125, 2189, 2226, 2261, 2377, 2433,
@@ -140,7 +160,6 @@ if __name__ == '__main__':
                 x0, a = fit_weibull_cdf(self.data)
                 self.assertAlmostEqual(x0, 2613, delta = 10)
                 self.assertAlmostEqual(a, 5, delta = 0.5)
-
             
             def test_preprocess(self):
                 fpath = os.path.join(os.getcwd(), 'test.csv')
@@ -156,5 +175,14 @@ if __name__ == '__main__':
                 for k in ret.columns:
                     assert len(ret[k]) == len(self.data)
                 os.unlink(fpath)
-        
+
+            def test_batch_weibull(self):
+                d = {'a': self.data, 'b': self.data, 'c': self.data}
+                df = pd.DataFrame(d).melt()
+                df.columns = ['cat', 'val']
+                out_f_p = os.path.join(os.getcwd(), 'batch-test.csv')
+                res = batch_fit_wb_cdf(df, out_f_p, 1000)
+                self.assertTrue(len(res) == 6000)
+                os.unlink(out_f_p)
+                
         unittest.main()
