@@ -3,3 +3,8 @@ bench/
 \.#*
 \.~*
 __pycache__/
+bootstrap_a.png
+bootstrap_f0.png
+fit_dat.csv
+input.png
+stats.csv
