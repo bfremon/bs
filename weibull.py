@@ -7,6 +7,8 @@ import sys
 import os
 import bs
 import struct2csv
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 DEBUG = True
 
@@ -39,6 +41,7 @@ def fit_wb_cdf(v):
     # y = beta + alpha * x
     beta, alpha = model.params
     x0 = np.exp(-beta / alpha)
+    # TODO: param to control number of decimals places
     return x0, alpha
 
 
@@ -155,10 +158,34 @@ def stats_fit_wb_cdf(df, alpha=0.05):
         f0_ub = f0_dat['val'].quantile(ub)
         r[cat] = [a_lb, a_median, a_ub, f0_lb, f0_median, f0_ub]
     index = ['a lower bound', 'a median', 'a upper bound',
-             x'f0 lower bound', 'f0 median', 'f0 upper bound']
+             'f0 lower bound', 'f0 median', 'f0 upper bound']
     ret = pd.DataFrame(r, index=index)
     return ret
 
+
+def plt_fit_wb_cdf(in_df, out_df, out_d_p):
+    """
+    Plot different graphs from in_df (raw bootstrap data dataframe) 
+    and out_df (output of batch_fit_wb_cdf())
+    """
+    dat_out_f = os.path.join(out_d_p, 'input.png')
+    _bxplt('cat', 'val', in_df,  dat_out_f, title='Input data')
+    a = out_df[out_df['param'] == 1]
+    f0 = out_df[out_df['param'] == 0]
+    a_out_f = os.path.join(out_d_p, 'bootstrap_a.png')
+    _bxplt('cat', 'val', a,  a_out_f, title='Bootstrap a (10^5 iterations)')
+    f0_out_f = os.path.join(out_d_p, 'bootstrap_f0.png')
+    _bxplt('cat', 'val', f0, f0_out_f, title='Bootstrap f0 (10^5 iterations)')
+    
+def _bxplt(x, y, dat, out_f, title=None, ytitle=None):
+    bxp = sns.boxplot(y=y, x=x, data=dat)
+    if title != None:
+        bxp.set_title(title)
+        bxp.set_xticklabels(bxp.get_xticklabels(), rotation=30)
+    if ytitle != None:
+        raise ErrorNotImplemented
+    bxp.get_figure().savefig(out_f)
+    plt.clf()
 
 
 if __name__ == '__main__':
