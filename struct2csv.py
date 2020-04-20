@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-DEBUG = True
+DEBUG = False
 
 def log(*msg):
     if DEBUG:
@@ -130,11 +130,14 @@ def melt_nested_dict2csv(d, fpath):
     ...
     '''
     s = ''
+    line_cnt = 0 
     for k_1 in d:
         for k_2 in d[k_1]:
             for i in range(0, len(d[k_1][k_2])):
                 s += str(k_1) + ';' + str(k_2) + ';' \
                            + str(d[k_1][k_2][i]) + '\n'
+                line_cnt += 1
+    log('melt_nested_dict2csv() - line count %i' % line_cnt)
     f_w = open(fpath, 'w')
     f_w.write('%s' % s)
     f_w.close()
