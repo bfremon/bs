@@ -7,4 +7,4 @@ all:
 	for f in *.py;  do echo '\nTesting '$$f; $(python3) $$f; done
 
 clean:
-	$(rm) -fr bench/
+	$(rm) -fr bench/ __pycache__/ fit_dat.csv stats.csv *.png
