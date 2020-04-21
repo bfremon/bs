@@ -20,7 +20,7 @@ def log(*msg):
         sys.stdout.write('%s\n' % s)
 
 
-def fit_wb_cdf(v, places=0):
+def fit_wb_cdf(v, places=3):
     """
     fit data from v array with weibull CDF given by:
     p(x) = 1 - exp((-x / x0)^(-a))
@@ -43,7 +43,7 @@ def fit_wb_cdf(v, places=0):
     x0 = np.exp(-beta / alpha)
     # TODO: param to control number of decimals places
     # BUG: 3 decimal places returned
-    return round(x0, places), round(alpha, places)
+    return np.around(x0, places), np.around(alpha, places)
 
 
 def pre_process(filepath):
@@ -137,7 +137,7 @@ def batch_fit_wb_cdf(input_data, out_f_p, iter_nb=10000):
     return ret
 
 
-def stats_fit_wb_cdf(df, alpha=0.05):
+def stats_fit_wb_cdf(df, alpha=0.05, places=2):
     """
     Return a dataframe with median and 1 - alpha % CI for weibull cdf fits 
     in df (output of batch_fit_wb_cdf) 
@@ -157,7 +157,12 @@ def stats_fit_wb_cdf(df, alpha=0.05):
         f0_median = f0_dat['val'].quantile(0.5)
         f0_lb = f0_dat['val'].quantile(lb)
         f0_ub = f0_dat['val'].quantile(ub)
-        r[cat] = [a_lb, a_median, a_ub, f0_lb, f0_median, f0_ub]
+        r[cat] = [np.around(a_lb, places),
+                  np.around(a_median, places),
+                  np.around(a_ub, places),
+                  np.around(f0_lb, places),
+                  np.around(f0_median, places),
+                  np.around(f0_ub, places)]
     index = ['a lower bound', 'a median', 'a upper bound',
              'f0 lower bound', 'f0 median', 'f0 upper bound']
     ret = pd.DataFrame(r, index=index)
@@ -205,12 +210,19 @@ if __name__ == '__main__':
         class test_weibull(unittest.TestCase):
             data = data
             batch_d = {'a': data, 'b': data, 'c': data}
-            
+            df = pd.DataFrame(batch_d).melt()
+            df.columns = ['cat', 'val']
+            out_f_p = os.path.join(os.getcwd(), 'batch-test.csv')
+            res = batch_fit_wb_cdf(df, out_f_p, 100)
+
             def test_fit_wb_cdf(self):
-                x0, a = fit_wb_cdf(self.data)
+                places = 4
+                x0, a = fit_wb_cdf(self.data, places=places)
                 self.assertAlmostEqual(x0, 2613, delta = 10)
                 self.assertAlmostEqual(a, 5, delta = 0.5)
-            
+                self.assertTrue(len(str(a).split('.')[1]) == places)
+                self.assertTrue(len(str(x0).split('.')[1]) == places)
+                
             def test_preprocess(self):
                 fpath = os.path.join(os.getcwd(), 'test.csv')
                 f_w = open(fpath, 'w')
@@ -227,18 +239,15 @@ if __name__ == '__main__':
                 os.unlink(fpath)
 
             def test_batch_wb(self):
-                df = pd.DataFrame(self.batch_d).melt()
-                df.columns = ['cat', 'val']
-                out_f_p = os.path.join(os.getcwd(), 'batch-test.csv')
-                res = batch_fit_wb_cdf(df, out_f_p, 100)
-                self.assertTrue(len(res) == 600)
-                sts = stats_fit_wb_cdf(res)
-#                print(sts)
-                os.unlink(out_f_p)
+                self.assertTrue(len(self.res) == 600)
+                os.unlink(self.out_f_p)
 
             def test_stats_fit_wb_cdf(self):
                 df = pd.DataFrame(self.batch_d)
                 self.assertRaises(SyntaxError, stats_fit_wb_cdf, df, 2)
-        
+                places = 2
+                sts = stats_fit_wb_cdf(self.res, places=places)
+                for v in sts.melt()['value']:
+                    self.assertTrue(len(str(v).split('.')[1]) == places)
 
         unittest.main()
