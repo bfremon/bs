@@ -187,7 +187,7 @@ def _bxplt(x, y, dat, out_f, title=None, ytitle=None):
     bxp = sns.boxplot(y=y, x=x, data=dat)
     if title != None:
         bxp.set_title(title)
-        bxp.set_xticklabels(bxp.get_xticklabels(), rotation=30)
+    bxp.set_xticklabels(bxp.get_xticklabels(), rotation=30)
     if ytitle != None:
         raise ErrorNotImplemented
     bxp.get_figure().savefig(out_f, dpi=300)
