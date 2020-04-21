@@ -24,7 +24,7 @@ def fit_wb_cdf(v, places=3):
     """
     fit data from v array with weibull CDF given by:
     p(x) = 1 - exp((-x / x0)^(-a))
-    return x0, a (rounded to places decimals)
+    return x0, a, rsquare_adj (rounded to places decimals)
     """
     vec = np.array(sorted(v)).astype('float')
     cdf = sm.distributions.empirical_distribution.ECDF(vec)
@@ -37,11 +37,12 @@ def fit_wb_cdf(v, places=3):
     ln_x = np.log(x)
     x_cte = sm.add_constant(ln_x)
     model = sm.OLS(y, x_cte).fit()
+    rsquared_adj = model.rsquared_adj
     preds = model.predict(x_cte)
     # y = beta + alpha * x
     beta, alpha = model.params
     x0 = np.exp(-beta / alpha)
-    return np.around(x0, places), np.around(alpha, places)
+    return np.around(x0, places), np.around(alpha, places), np.around(rsquared_adj, places)
 
 
 def pre_process(filepath):
@@ -149,6 +150,7 @@ def stats_fit_wb_cdf(df, alpha=0.05, places=2):
         cat_dat = df[df['cat'] == cat]
         a_dat = cat_dat[cat_dat['param'] == 1]
         f0_dat = cat_dat[cat_dat['param'] == 0]
+        r2_dat = cat_dat[cat_dat['param'] == 2]
         a_median = a_dat['val'].quantile(0.5)
         lb = alpha / 2
         ub = 1 - lb
@@ -157,14 +159,17 @@ def stats_fit_wb_cdf(df, alpha=0.05, places=2):
         f0_median = f0_dat['val'].quantile(0.5)
         f0_lb = f0_dat['val'].quantile(lb)
         f0_ub = f0_dat['val'].quantile(ub)
+        min_rsquare_adj = r2_dat['val'].min()
         r[cat] = [np.around(a_lb, places),
                   np.around(a_median, places),
                   np.around(a_ub, places),
                   np.around(f0_lb, places),
                   np.around(f0_median, places),
-                  np.around(f0_ub, places)]
+                  np.around(f0_ub, places),
+                  np.around(min_rsquare_adj, places)]
     index = ['a lower bound', 'a median', 'a upper bound',
-             'f0 lower bound', 'f0 median', 'f0 upper bound']
+             'f0 lower bound', 'f0 median', 'f0 upper bound',
+             'Min R^2 adj.']
     ret = pd.DataFrame(r, index=index)
     return ret
 
@@ -178,10 +183,14 @@ def plt_fit_wb_cdf(in_df, out_df, out_d_p):
     _bxplt('cat', 'val', in_df,  dat_out_f, title='Input data')
     a = out_df[out_df['param'] == 1]
     f0 = out_df[out_df['param'] == 0]
+    r2 = out_df[out_df['param'] == 2]
     a_out_f = os.path.join(out_d_p, 'bootstrap_a.png')
+    #BUG: update title with right number of iterations
     _bxplt('cat', 'val', a,  a_out_f, title='Bootstrap a (10^5 iterations)')
     f0_out_f = os.path.join(out_d_p, 'bootstrap_f0.png')
     _bxplt('cat', 'val', f0, f0_out_f, title='Bootstrap f0 (10^5 iterations)')
+    r2_out_f = os.path.join(out_d_p, 'bootstrap_R2adj.png')
+    _bxplt('cat', 'val', r2, r2_out_f, title='Bootstrap R^2 adj. (10^5 iterations)')
     
 def _bxplt(x, y, dat, out_f, title=None, ytitle=None):
     bxp = sns.boxplot(y=y, x=x, data=dat)
@@ -217,7 +226,7 @@ if __name__ == '__main__':
 
             def test_fit_wb_cdf(self):
                 places = 4
-                x0, a = fit_wb_cdf(self.data, places=places)
+                x0, a, r2 = fit_wb_cdf(self.data, places=places)
                 self.assertAlmostEqual(x0, 2613, delta = 10)
                 self.assertAlmostEqual(a, 5, delta = 0.5)
                 self.assertTrue(len(str(a).split('.')[1]) <= places)
@@ -239,7 +248,7 @@ if __name__ == '__main__':
                 os.unlink(fpath)
 
             def test_batch_wb(self):
-                self.assertTrue(len(self.res) == 600)
+                self.assertTrue(len(self.res) == 900)
                 os.unlink(self.out_f_p)
 
             def test_stats_fit_wb_cdf(self):
