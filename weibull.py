@@ -117,15 +117,17 @@ def bench_ci(v, iters):
     struct2csv.stack_simple_dict2csv(smpls, os.path.join(dest_dir, 'samples.csv'))
 
     
-def batch_fit_wb_cdf(input_data, out_f_p, iter_nb=10000):
+def batch_fit_wb_cdf(input_data, out_f_p, iter_nb=10000, logging=True):
     """
     Fit a weibull cdf on each category of input_data for iter_nb iterations.
     Return a melted dataframe with all data, logged in out_f_p (csv file).
+    Optional logging through logging arg
     """
     r = {}
     out_f_p = os.path.join(out_f_p)
     for cat in input_data['cat'].unique():
-        log('Processing category %s' % str(cat))
+        if logging:
+            log('Processing category %s' % str(cat))
         dat = input_data[input_data['cat'] == cat]
         v = dat['val'].tolist()
         out = bs.bootstrap(v, fit_wb_cdf, resample_n = len(v), iter_n = iter_nb)
@@ -213,15 +215,15 @@ if __name__ == '__main__':
             df = pd.DataFrame(batch_d).melt()
             df.columns = ['cat', 'val']
             out_f_p = os.path.join(os.getcwd(), 'batch-test.csv')
-            res = batch_fit_wb_cdf(df, out_f_p, 100)
+            res = batch_fit_wb_cdf(df, out_f_p, 100, logging=False)
 
             def test_fit_wb_cdf(self):
                 places = 4
                 x0, a = fit_wb_cdf(self.data, places=places)
                 self.assertAlmostEqual(x0, 2613, delta = 10)
                 self.assertAlmostEqual(a, 5, delta = 0.5)
-                self.assertTrue(len(str(a).split('.')[1]) == places)
-                self.assertTrue(len(str(x0).split('.')[1]) == places)
+                self.assertTrue(len(str(a).split('.')[1]) <= places)
+                self.assertTrue(len(str(x0).split('.')[1]) <= places)
                 
             def test_preprocess(self):
                 fpath = os.path.join(os.getcwd(), 'test.csv')
@@ -245,9 +247,10 @@ if __name__ == '__main__':
             def test_stats_fit_wb_cdf(self):
                 df = pd.DataFrame(self.batch_d)
                 self.assertRaises(SyntaxError, stats_fit_wb_cdf, df, 2)
-                places = 2
+                places = 4
                 sts = stats_fit_wb_cdf(self.res, places=places)
                 for v in sts.melt()['value']:
-                    self.assertTrue(len(str(v).split('.')[1]) == places)
+                    dec_places = len(str(v).split('.')[1])
+                    self.assertTrue(dec_places <= places)
 
         unittest.main()
