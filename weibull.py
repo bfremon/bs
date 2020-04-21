@@ -41,8 +41,6 @@ def fit_wb_cdf(v, places=3):
     # y = beta + alpha * x
     beta, alpha = model.params
     x0 = np.exp(-beta / alpha)
-    # TODO: param to control number of decimals places
-    # BUG: 3 decimal places returned
     return np.around(x0, places), np.around(alpha, places)
 
 
